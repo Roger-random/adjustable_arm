@@ -244,7 +244,7 @@ mid_joint_trim = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, wedge_hex_z + fastener_hex_thickness))
     .circle(ball_surround_outer_radius)
-    .extrude(wedge_diameter)
+    .extrude(ball_surround_outer_radius * 2)
     )
 
 wedge_block_hex_bolt = (
@@ -269,7 +269,7 @@ arm = (
     + mid_joint
     - arm_actuating_rod_channel
     - mid_joint_clearance
-    - mid_joint_trim
+    - mid_joint_trim.translate((0,0,-wedge_range_vertical))
     + arm_actuating_rod
     - arm_end_ball_cavity
     )
