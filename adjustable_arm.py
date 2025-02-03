@@ -164,7 +164,13 @@ wedge_angle = 40
 wedge_range_horizontal = 3
 wedge_range_vertical = wedge_range_horizontal / math.tan(math.radians(wedge_angle))
 
-wedge_block_upper = (
+wedge_edge_height = (
+    math.tan(math.radians(wedge_angle))
+    * ball_surround_outer_radius
+    /2
+    )
+
+wedge_block_upper_slice = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
     .transformed(rotate=cq.Vector(-wedge_angle,0,0))
@@ -172,6 +178,25 @@ wedge_block_upper = (
           ball_surround_outer_radius * 3)
     .extrude(ball_surround_outer_radius)
     )
+
+wedge_block_upper = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length,
+                                  wedge_range_vertical - wedge_edge_height))
+    .rect(ball_surround_outer_radius, ball_surround_outer_radius)
+    .circle(wedge_fastener_diameter/2)
+    .extrude(wedge_edge_height * 2
+             - wedge_range_vertical
+             + nut_thickness)
+    ).intersect(wedge_block_upper_slice) - (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length,
+                                  wedge_edge_height))
+    .transformed(rotate=cq.Vector(0, 0, 30))
+    .polygon(6, nut_width, circumscribed = True)
+    .extrude(nut_thickness)
+    )
+show_object(wedge_block_upper, options={"color":"green","alpha":0.5})
 
 wedge_block_lower = (
     cq.Workplane("XY")
@@ -202,7 +227,7 @@ wedge_block_lower_fastener_slot = (
 arm_actuating_rod = (
     arm_actuating_rod
     + wedge_block_lower
-    - wedge_block_upper
+    - wedge_block_upper_slice
     - wedge_block_lower_fastener_slot
     )
 
