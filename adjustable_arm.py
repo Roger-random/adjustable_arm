@@ -46,7 +46,7 @@ ball_surround_gap = 0.2
 cutoff_z = -ball_diameter*math.sin(math.radians(45))/2
 wedge_range_horizontal = 2
 
-reposition_for_printing = True
+reposition_for_printing = False
 
 end_ball = (
     cq.Workplane("XY")
@@ -141,7 +141,7 @@ arm_end_ball_cavity = (
 mid_joint = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
-    .circle(ball_surround_outer_radius)
+    .circle(ball_surround_outer_radius + nozzle_diameter * 2)
     .extrude(ball_surround_outer_radius, both = True)
     )
 
@@ -158,11 +158,11 @@ wedge_block_upper_slice = (
     .extrude(ball_surround_outer_radius * 4)
     )
 
-wedge_hex_diameter = rod_side / math.sin(math.radians(45))
-wedge_block_mid_hex = (
+wedge_diameter = rod_side / math.sin(math.radians(45))
+wedge_block_mid = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
-    .polygon(6, wedge_hex_diameter, circumscribed = False)
+    .circle(wedge_diameter/2)
     .extrude(ball_surround_outer_radius, both=True)
     )
 
@@ -185,27 +185,27 @@ wedge_block_lower_fastener_slot = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-mid_joint_hex_clearance_size = wedge_hex_diameter + ball_surround_gap * 2
-mid_joint_hex_clearance = (
+mid_joint_clearance_size = wedge_diameter + ball_surround_gap * 2
+mid_joint_clearance = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
-    .polygon(6, mid_joint_hex_clearance_size, circumscribed = False)
+    .circle(mid_joint_clearance_size/2)
     .extrude(ball_surround_outer_radius, both = True)
     ) + (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length - wedge_range_horizontal/2, 0))
-    .rect(mid_joint_hex_clearance_size, wedge_range_horizontal)
+    .rect(mid_joint_clearance_size, wedge_range_horizontal)
     .extrude(ball_surround_outer_radius, both = True)
     ) + (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length - wedge_range_horizontal, 0))
-    .polygon(6, mid_joint_hex_clearance_size, circumscribed = False)
+    .circle(mid_joint_clearance_size/2)
     .extrude(ball_surround_outer_radius, both = True)
     )
 
 arm_actuating_rod = (
     arm_actuating_rod
-    + wedge_block_mid_hex
+    + wedge_block_mid
     - wedge_block_upper_slice
     - wedge_block_lower_fastener_slot
     )
@@ -214,15 +214,14 @@ arm_actuating_rod = (
 # trimmed for different application: one on near side of knob to carry its
 # pressure, and one on far side of knob hosting a hex bolt head.
 wedge_block_upper_full_height = (
-    wedge_block_mid_hex
+    wedge_block_mid
     .intersect(wedge_block_upper_slice)
-    .edges("<Z").chamfer(wedge_range_vertical)
     ) - (
     # Hole through the middle for fastener
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
     .circle(wedge_fastener_diameter/2)
-    .extrude(wedge_hex_diameter/2, both=True)
+    .extrude(wedge_diameter/2, both=True)
     )
 
 wedge_hex_z = (
@@ -244,8 +243,8 @@ mid_joint_trim = (
     # Volume above the top of hex head.
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, wedge_hex_z + fastener_hex_thickness))
-    .circle(ball_surround_outer_radius - nozzle_diameter * 3)
-    .extrude(wedge_hex_diameter)
+    .circle(ball_surround_outer_radius)
+    .extrude(wedge_diameter)
     )
 
 wedge_block_hex_bolt = (
@@ -269,7 +268,7 @@ arm = (
     + arm_outer_shell
     + mid_joint
     - arm_actuating_rod_channel
-    - mid_joint_hex_clearance
+    - mid_joint_clearance
     - mid_joint_trim
     + arm_actuating_rod
     - arm_end_ball_cavity
