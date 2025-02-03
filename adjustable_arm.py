@@ -36,91 +36,39 @@ import cadquery as cq
 # The ball for the ball-and-socket joint at the effector end
 
 ball_diameter = 20
+fastener_diameter = 6.5
+fastener_thread_pitch = 1.2
+nut_thickness = 5.5
+nut_width = 11.25
+ball_surround_gap = 0.2
 
 end_ball = (
     cq.Workplane("XY")
     .sphere(ball_diameter/2)
     )
 
-# The lug that will be added to the ball. This is the part that can be
-# customized for different attachments. Example: dial indicator holder.
-end_ball_lug_side = ball_diameter/math.sqrt(2)
-end_ball_lug_round_diameter = 6
-end_ball_lug_round_length = 5
-end_ball_lug_transition = 6
-end_ball_lug_square_length = 20
-
-# The main lug shape
-end_ball_lug = (
-    cq.Workplane("XZ")
-    .circle(end_ball_lug_round_diameter/2)
-    .extrude(ball_diameter/2 + end_ball_lug_round_length)
-    .faces("<Y")
-    .circle(end_ball_lug_round_diameter/2)
-    .workplane(offset=end_ball_lug_transition)
-    .rect(end_ball_lug_side, end_ball_lug_side)
-    .loft()
-    .faces("<Y")
-    .rect(end_ball_lug_side, end_ball_lug_side)
-    .extrude(end_ball_lug_square_length)
-    ).edges("|Y").fillet(1)
-
-# Hole for dial indicator
-end_ball_lug_hole_offset = (
-    end_ball_lug_square_length +
-    end_ball_lug_round_length +
-    end_ball_lug_transition +
-    ball_diameter/2 -
-    end_ball_lug_side
-    )
-end_ball_lug_hole_diameter = 9.5
-
-end_ball_lug_hole = (
+end_ball_fastener_shaft = (
     cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, -end_ball_lug_hole_offset, 0))
-    .circle(end_ball_lug_hole_diameter/2)
-    .extrude(end_ball_lug_side, both=True)
+    .transformed(offset=cq.Vector(0, 0,
+                                  fastener_thread_pitch + nut_thickness / 2))
+    .circle(fastener_diameter/2)
+    .extrude(-ball_diameter)
     )
 
-# Slot allowing the lug to flex and clamp on indicator
-end_ball_lug_slot_width = 2
-
-end_ball_lug_slot = (
-    cq.Workplane("XZ")
-    .transformed(offset=cq.Vector(0, 0, end_ball_lug_hole_offset))
-    .rect(end_ball_lug_slot_width, end_ball_lug_side)
-    .extrude(end_ball_lug_square_length)
+end_ball_fastener_nut = (
+    cq.Workplane("XY")
+    .polygon(6, nut_width, circumscribed = True)
+    .extrude(nut_thickness/2, both=True)
     )
 
-# Clamping fastener
-end_ball_lug_fastener_clearance_diameter = 3.5
-end_ball_lug_fastener_clearance_offset = (
-    end_ball_lug_square_length +
-    end_ball_lug_round_length +
-    end_ball_lug_transition +
-    ball_diameter/2 -
-    end_ball_lug_fastener_clearance_diameter * 1.5
-    )
-
-end_ball_lug_fastener_clearance = (
-    cq.Workplane("YZ")
-    .transformed(offset=cq.Vector(-end_ball_lug_fastener_clearance_offset, 0, 0))
-    .circle(end_ball_lug_fastener_clearance_diameter/2)
-    .extrude(end_ball_lug_side, both=True)
-    )
-
-# Assemble the end ball-and-socket
 end_ball_assembly = (
-    end_ball +
-    end_ball_lug -
-    end_ball_lug_hole -
-    end_ball_lug_slot -
-    end_ball_lug_fastener_clearance
+    end_ball
+    - end_ball_fastener_shaft
+    - end_ball_fastener_nut
     )
 
 # Create the socket surrounind the ball
-ball_surround_thickness = end_ball_lug_round_length
-ball_surround_gap = 0.2
+ball_surround_thickness = 5
 ball_surround_inner_radius = ball_surround_gap + ball_diameter/2
 ball_surround_outer_radius = ball_surround_thickness + ball_diameter/2
 ball_surround_inner_45 = ball_surround_inner_radius/math.sqrt(2)
@@ -134,8 +82,8 @@ ball_surround_outer = (
 # Cut a cone so the end lug can swivel around freely in a 90 degree cone
 lug_clearance = (
     cq.Workplane("YZ")
-    .lineTo(end_ball_lug_round_diameter/2, 0)
-    .lineTo(-ball_diameter, ball_diameter + end_ball_lug_round_diameter/2)
+    .lineTo(fastener_diameter/2, 0)
+    .lineTo(-ball_diameter, ball_diameter + fastener_diameter/2)
     .lineTo(-ball_diameter, 0)
     .close()
     .revolve(360, (0,0,0), (1,0,0))
