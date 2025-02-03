@@ -43,6 +43,7 @@ nut_width = 11.25
 nozzle_diameter = 0.4
 ball_surround_gap = 0.2
 cutoff_z = -ball_diameter*math.sin(math.radians(45))/2
+wedge_range_horizontal = 3
 
 end_ball = (
     cq.Workplane("XY")
@@ -96,7 +97,7 @@ ball_surround_outer = ball_surround_outer - lug_clearance
 arm_length = 50
 arm_side_outer = ball_surround_outer_45*2 + ball_surround_thickness/4
 rod_side = arm_side_outer - ball_surround_thickness
-arm_side_inner = rod_side + ball_surround_gap * 2
+arm_side_inner = rod_side + ball_surround_gap * 4
 
 # Outer shell will link the ball-and-socket to center (mid) joint
 arm_outer_shell = (
@@ -114,17 +115,16 @@ arm_actuating_rod_channel = (
     cq.Workplane("XZ")
     .transformed(rotate=cq.Vector(0,0,45))
     .rect(arm_side_inner, arm_side_inner)
-    .extrude(-arm_length-ball_surround_gap)
-    .edges("|Y")
-    .fillet(ball_surround_gap + ball_surround_thickness/4)
+    .extrude(-arm_length-ball_surround_gap*2)
     )
 
 # Rod that transmits pushing force from mid joint to ball in socket
 arm_actuating_rod = (
     cq.Workplane("XZ")
     .transformed(rotate=cq.Vector(0,0,45))
+    .transformed(offset=cq.Vector(0, 0, -wedge_range_horizontal))
     .rect(rod_side, rod_side)
-    .extrude(-arm_length)
+    .extrude(wedge_range_horizontal - arm_length)
     .edges("|Y")
     .fillet(ball_surround_thickness/4)
     )
@@ -161,7 +161,6 @@ pressure_slot = (
 
 wedge_fastener_diameter = 6.5
 wedge_angle = 40
-wedge_range_horizontal = 3
 wedge_range_vertical = wedge_range_horizontal / math.tan(math.radians(wedge_angle))
 
 wedge_edge_height = (
