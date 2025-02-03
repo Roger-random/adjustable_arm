@@ -55,8 +55,6 @@ end_ball = (
 
 end_ball_fastener_shaft = (
     cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, 0,
-                                  fastener_thread_pitch + fastener_hex_thickness / 2))
     .circle(fastener_diameter/2)
     .extrude(-ball_diameter)
     )
@@ -67,10 +65,28 @@ end_ball_fastener_nut = (
     .extrude(fastener_hex_thickness/2, both=True)
     )
 
+end_ball_cone = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, 0, fastener_hex_thickness / 2))
+    .polygon(6, fastener_hex_width, circumscribed = True)
+    .workplane(offset = (fastener_hex_width - fastener_diameter_tight) / 4)
+    .circle(fastener_diameter_tight/2)
+    .loft()
+    .faces(">Z").workplane()
+    .circle(fastener_diameter_tight/2)
+    .extrude(fastener_thread_pitch*2)
+    .faces(">Z").workplane()
+    .circle(fastener_diameter_tight/2)
+    .workplane(offset=fastener_diameter_tight/4)
+    .circle(ball_surround_gap)
+    .loft()
+    )
+
 end_ball_assembly = (
     end_ball
     - end_ball_fastener_shaft
     - end_ball_fastener_nut
+    - end_ball_cone
     )
 
 # Create the socket surrounind the ball
