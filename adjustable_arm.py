@@ -37,13 +37,16 @@ import cadquery as cq
 
 ball_diameter = 20
 fastener_diameter = 6.5
+fastener_diameter_tight = 6
 fastener_thread_pitch = 1.2
-nut_thickness = 5.5
-nut_width = 11.25
+fastener_hex_thickness = 5.7
+fastener_hex_width = 11.25
 nozzle_diameter = 0.4
 ball_surround_gap = 0.2
 cutoff_z = -ball_diameter*math.sin(math.radians(45))/2
 wedge_range_horizontal = 2
+
+reposition_for_printing = True
 
 end_ball = (
     cq.Workplane("XY")
@@ -53,15 +56,15 @@ end_ball = (
 end_ball_fastener_shaft = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, 0,
-                                  fastener_thread_pitch + nut_thickness / 2))
+                                  fastener_thread_pitch + fastener_hex_thickness / 2))
     .circle(fastener_diameter/2)
     .extrude(-ball_diameter)
     )
 
 end_ball_fastener_nut = (
     cq.Workplane("XY")
-    .polygon(6, nut_width, circumscribed = True)
-    .extrude(nut_thickness/2, both=True)
+    .polygon(6, fastener_hex_width, circumscribed = True)
+    .extrude(fastener_hex_thickness/2, both=True)
     )
 
 end_ball_assembly = (
@@ -95,7 +98,7 @@ ball_surround_outer = ball_surround_outer - lug_clearance
 
 # Build the arm connecting to the ball joint
 arm_length = 50
-arm_side_outer = ball_surround_outer_45*2 + ball_surround_thickness/4
+arm_side_outer = ball_surround_outer_45*2
 rod_side = arm_side_outer - ball_surround_thickness
 arm_side_inner = rod_side + ball_surround_gap * 4
 
@@ -126,7 +129,6 @@ arm_actuating_rod = (
     .rect(rod_side, rod_side)
     .extrude(wedge_range_horizontal - arm_length)
     .edges("|Y")
-    .fillet(ball_surround_thickness/4)
     )
 
 # The actual "socket" part of ball and socket
@@ -143,24 +145,9 @@ mid_joint = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-# Features to support pressure wedge mechanism
-pressure_slot = (
-    cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length, 0))
-    .rect(ball_surround_outer_radius + ball_surround_gap * 2,
-          ball_surround_outer_radius + ball_surround_gap * 2)
-    .extrude(ball_surround_outer_radius, both = True)
-    )
-
 wedge_fastener_diameter = 6.5
-wedge_angle = 30
+wedge_angle = 25
 wedge_range_vertical = wedge_range_horizontal / math.tan(math.radians(wedge_angle))
-
-wedge_edge_height = (
-    math.tan(math.radians(wedge_angle))
-    * ball_surround_outer_radius
-    /2
-    )
 
 wedge_block_upper_slice = (
     cq.Workplane("XY")
@@ -168,33 +155,15 @@ wedge_block_upper_slice = (
     .transformed(rotate=cq.Vector(-wedge_angle,0,0))
     .rect(ball_surround_outer_radius * 4,
           ball_surround_outer_radius * 4)
-    .extrude(ball_surround_outer_radius)
+    .extrude(ball_surround_outer_radius * 4)
     )
 
-wedge_block_upper_z = wedge_edge_height + nut_thickness
-wedge_block_lower_z = wedge_range_vertical - wedge_edge_height
-
-wedge_block_upper = (
+wedge_hex_diameter = rod_side / math.sin(math.radians(45))
+wedge_block_mid_hex = (
     cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length, wedge_block_lower_z))
-    .rect(ball_surround_outer_radius, ball_surround_outer_radius)
-    .circle(wedge_fastener_diameter/2)
-    .extrude(wedge_block_upper_z - wedge_block_lower_z)
-    ).intersect(wedge_block_upper_slice) - (
-    cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length,
-                                  wedge_edge_height))
-    .transformed(rotate=cq.Vector(0, 0, 30))
-    .polygon(6, nut_width, circumscribed = True)
-    .extrude(nut_thickness)
-    )
-show_object(wedge_block_upper, options={"color":"green","alpha":0.5})
-
-wedge_block_lower = (
-    cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length + ball_surround_outer_radius/4, 0))
-    .rect(ball_surround_outer_radius, ball_surround_outer_radius/2)
-    .extrude(-ball_surround_outer_radius)
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .polygon(6, wedge_hex_diameter, circumscribed = False)
+    .extrude(ball_surround_outer_radius, both=True)
     )
 
 # TODO: Combine shapes into a single 2D wire that is extruded, instead of
@@ -216,29 +185,92 @@ wedge_block_lower_fastener_slot = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-mid_joint_knob_clearance = (
+mid_joint_hex_clearance_size = wedge_hex_diameter + ball_surround_gap * 2
+mid_joint_hex_clearance = (
     cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length, wedge_block_upper_z - wedge_range_vertical))
-    .circle(ball_surround_outer_radius - nozzle_diameter*4)
-    .extrude(ball_surround_outer_radius)
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .polygon(6, mid_joint_hex_clearance_size, circumscribed = False)
+    .extrude(ball_surround_outer_radius, both = True)
+    ) + (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length - wedge_range_horizontal/2, 0))
+    .rect(mid_joint_hex_clearance_size, wedge_range_horizontal)
+    .extrude(ball_surround_outer_radius, both = True)
+    ) + (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length - wedge_range_horizontal, 0))
+    .polygon(6, mid_joint_hex_clearance_size, circumscribed = False)
+    .extrude(ball_surround_outer_radius, both = True)
     )
 
 arm_actuating_rod = (
     arm_actuating_rod
-    + wedge_block_lower
+    + wedge_block_mid_hex
     - wedge_block_upper_slice
     - wedge_block_lower_fastener_slot
-    - mid_joint_knob_clearance
     )
+
+# Wedge that will push on the actuating rod in its full size. Expected to be
+# trimmed for different application: one on near side of knob to carry its
+# pressure, and one on far side of knob hosting a hex bolt head.
+wedge_block_upper_full_height = (
+    wedge_block_mid_hex
+    .intersect(wedge_block_upper_slice)
+    .edges("<Z").chamfer(wedge_range_vertical)
+    ) - (
+    # Hole through the middle for fastener
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .circle(wedge_fastener_diameter/2)
+    .extrude(wedge_hex_diameter/2, both=True)
+    )
+
+wedge_hex_z = (
+    # Minimum Z
+    fastener_hex_width * math.tan(math.radians(wedge_angle)) / 2
+    # Plus a nonzero big of plastic to support the hex bolt at minimum point
+    + 1.2
+    )
+
+wedge_block_hex_bolt_head = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, wedge_hex_z))
+    .transformed(rotate=cq.Vector(0, 0, 30))
+    .polygon(6, fastener_hex_width, circumscribed = True)
+    .extrude(fastener_hex_thickness)
+    )
+
+mid_joint_trim = (
+    # Volume above the top of hex head.
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, wedge_hex_z + fastener_hex_thickness))
+    .circle(ball_surround_outer_radius - nozzle_diameter * 3)
+    .extrude(wedge_hex_diameter)
+    )
+
+wedge_block_hex_bolt = (
+    wedge_block_upper_full_height
+    - mid_joint_trim
+    - wedge_block_hex_bolt_head
+    )
+
+if reposition_for_printing:
+    show_object(
+        wedge_block_hex_bolt
+        .translate((ball_surround_outer_radius*2,-arm_length,0))
+        .rotate((0, 0, 0), (1, 0, 0), wedge_angle),
+        options={"color":"red", "alpha":0.5})
+else:
+    show_object(wedge_block_hex_bolt, options={"color":"red", "alpha":0.5})
 
 # Assemble half of the arm. Print this twice for the three-jointed mechanism.
 arm = (
     ball_surround_outer
     + arm_outer_shell
     + mid_joint
-    - mid_joint_knob_clearance
     - arm_actuating_rod_channel
-    - pressure_slot
+    - mid_joint_hex_clearance
+    - mid_joint_trim
     + arm_actuating_rod
     - arm_end_ball_cavity
     )
@@ -284,6 +316,9 @@ chop = (
     .rect(arm_length*3,arm_length*3)
     .extrude(-ball_surround_outer_radius)
     )
-show_object(combined - chop, options={"color":"blue", "alpha":0.5})
+if reposition_for_printing:
+    show_object((combined - chop).translate((0,0,-cutoff_z)), options={"color":"blue", "alpha":0.5})
+else:
+    show_object(combined - chop, options={"color":"blue", "alpha":0.5})
 
 # 2345678901234567890123456789012345678901234567890123456789012345678901234567890
