@@ -40,7 +40,9 @@ fastener_diameter = 6.5
 fastener_thread_pitch = 1.2
 nut_thickness = 5.5
 nut_width = 11.25
+nozzle_diameter = 0.4
 ball_surround_gap = 0.2
+cutoff_z = -ball_diameter*math.sin(math.radians(45))/2
 
 end_ball = (
     cq.Workplane("XY")
@@ -133,12 +135,19 @@ arm_end_ball_cavity = (
     .sphere(ball_surround_gap + ball_diameter/2)
     )
 
-# External volume for mid joint
-mid_joint_external = (
+# Mid joint structure
+mid_joint = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
     .circle(ball_surround_outer_radius)
     .extrude(ball_surround_outer_radius, both = True)
+    )
+
+mid_joint_knob_clearance = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, ball_surround_outer_radius))
+    .circle(ball_surround_outer_radius - nozzle_diameter*4)
+    .extrude(-ball_surround_thickness/2)
     )
 
 # Features to support pressure wedge mechanism
@@ -201,7 +210,8 @@ arm_actuating_rod = (
 arm = (
     ball_surround_outer
     + arm_outer_shell
-    + mid_joint_external
+    + mid_joint
+    - mid_joint_knob_clearance
     - arm_actuating_rod_channel
     - pressure_slot
     + arm_actuating_rod
@@ -245,7 +255,7 @@ combined = end_ball_assembly + arm
 
 chop = (
     cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0,0,-ball_diameter/(2*math.sqrt(2))))
+    .transformed(offset=cq.Vector(0,0,cutoff_z))
     .rect(arm_length*3,arm_length*3)
     .extrude(-ball_surround_outer_radius)
     )
