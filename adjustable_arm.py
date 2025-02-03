@@ -144,8 +144,8 @@ ball_surround_outer = ball_surround_outer - lug_clearance
 
 # Build the arm connecting to the ball joint
 arm_length = 50
-arm_side_outer = 17
-rod_side = arm_side_outer - 5
+arm_side_outer = ball_surround_outer_45*2 + ball_surround_thickness/4
+rod_side = arm_side_outer - ball_surround_thickness
 arm_side_inner = rod_side + ball_surround_gap * 2
 
 # Outer shell will link the ball-and-socket to center (mid) joint
@@ -155,7 +155,7 @@ arm_outer_shell = (
     .rect(arm_side_outer, arm_side_outer)
     .extrude(-arm_length)
     .edges("|Y")
-    .fillet(2.5)
+    .fillet(ball_surround_thickness/2)
     )
 
 # Channel inside for rod that transmits pushing force from mid joint to
@@ -164,7 +164,9 @@ arm_actuating_rod_channel = (
     cq.Workplane("XZ")
     .transformed(rotate=cq.Vector(0,0,45))
     .rect(arm_side_inner, arm_side_inner)
-    .extrude(-arm_length)
+    .extrude(-arm_length-ball_surround_gap)
+    .edges("|Y")
+    .fillet(ball_surround_gap + ball_surround_thickness/4)
     )
 
 # Rod that transmits pushing force from mid joint to ball in socket
@@ -173,6 +175,8 @@ arm_actuating_rod = (
     .transformed(rotate=cq.Vector(0,0,45))
     .rect(rod_side, rod_side)
     .extrude(-arm_length)
+    .edges("|Y")
+    .fillet(ball_surround_thickness/4)
     )
 
 # The actual "socket" part of ball and socket
@@ -181,13 +185,79 @@ arm_end_ball_cavity = (
     .sphere(ball_surround_gap + ball_diameter/2)
     )
 
+# External volume for mid joint
+mid_joint_external = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .circle(ball_surround_outer_radius)
+    .extrude(ball_surround_outer_radius, both = True)
+    )
+
+# Features to support pressure wedge mechanism
+pressure_slot = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .rect(ball_surround_outer_radius + ball_surround_gap * 2,
+          ball_surround_outer_radius + ball_surround_gap * 2)
+    .extrude(ball_surround_outer_radius, both = True)
+    )
+
+wedge_fastener_diameter = 6.5
+wedge_angle = 40
+wedge_range_horizontal = 3
+wedge_range_vertical = wedge_range_horizontal / math.tan(math.radians(wedge_angle))
+
+wedge_block_upper = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .transformed(rotate=cq.Vector(-wedge_angle,0,0))
+    .rect(ball_surround_outer_radius * 3,
+          ball_surround_outer_radius * 3)
+    .extrude(ball_surround_outer_radius)
+    )
+
+wedge_block_lower = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length + ball_surround_outer_radius/4, 0))
+    .rect(ball_surround_outer_radius, ball_surround_outer_radius/2)
+    .extrude(-ball_surround_outer_radius)
+    )
+
+# TODO: Combine shapes into a single 2D wire that is extruded, instead of
+# combining via three extrusions.
+wedge_block_lower_fastener_slot = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, 0))
+    .circle(wedge_fastener_diameter/2)
+    .extrude(ball_surround_outer_radius, both = True)
+    ) + (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length + wedge_range_horizontal, 0))
+    .circle(wedge_fastener_diameter/2)
+    .extrude(ball_surround_outer_radius, both = True)
+    ) + (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length + wedge_range_horizontal/2, 0))
+    .rect(wedge_fastener_diameter, wedge_range_horizontal)
+    .extrude(ball_surround_outer_radius, both = True)
+    )
+
+arm_actuating_rod = (
+    arm_actuating_rod
+    + wedge_block_lower
+    - wedge_block_upper
+    - wedge_block_lower_fastener_slot
+    )
+
 # Assemble half of the arm. Print this twice for the three-jointed mechanism.
 arm = (
-    ball_surround_outer +
-    arm_outer_shell -
-    arm_actuating_rod_channel +
-    arm_actuating_rod -
-    arm_end_ball_cavity
+    ball_surround_outer
+    + arm_outer_shell
+    + mid_joint_external
+    - arm_actuating_rod_channel
+    - pressure_slot
+    + arm_actuating_rod
+    - arm_end_ball_cavity
     )
 
 
