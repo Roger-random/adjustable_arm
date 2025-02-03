@@ -43,7 +43,7 @@ nut_width = 11.25
 nozzle_diameter = 0.4
 ball_surround_gap = 0.2
 cutoff_z = -ball_diameter*math.sin(math.radians(45))/2
-wedge_range_horizontal = 3
+wedge_range_horizontal = 2
 
 end_ball = (
     cq.Workplane("XY")
@@ -143,13 +143,6 @@ mid_joint = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-mid_joint_knob_clearance = (
-    cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length, ball_surround_outer_radius))
-    .circle(ball_surround_outer_radius - nozzle_diameter*4)
-    .extrude(-ball_surround_thickness/2)
-    )
-
 # Features to support pressure wedge mechanism
 pressure_slot = (
     cq.Workplane("XY")
@@ -160,7 +153,7 @@ pressure_slot = (
     )
 
 wedge_fastener_diameter = 6.5
-wedge_angle = 40
+wedge_angle = 30
 wedge_range_vertical = wedge_range_horizontal / math.tan(math.radians(wedge_angle))
 
 wedge_edge_height = (
@@ -173,20 +166,20 @@ wedge_block_upper_slice = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
     .transformed(rotate=cq.Vector(-wedge_angle,0,0))
-    .rect(ball_surround_outer_radius * 3,
-          ball_surround_outer_radius * 3)
+    .rect(ball_surround_outer_radius * 4,
+          ball_surround_outer_radius * 4)
     .extrude(ball_surround_outer_radius)
     )
 
+wedge_block_upper_z = wedge_edge_height + nut_thickness
+wedge_block_lower_z = wedge_range_vertical - wedge_edge_height
+
 wedge_block_upper = (
     cq.Workplane("XY")
-    .transformed(offset=cq.Vector(0, arm_length,
-                                  wedge_range_vertical - wedge_edge_height))
+    .transformed(offset=cq.Vector(0, arm_length, wedge_block_lower_z))
     .rect(ball_surround_outer_radius, ball_surround_outer_radius)
     .circle(wedge_fastener_diameter/2)
-    .extrude(wedge_edge_height * 2
-             - wedge_range_vertical
-             + nut_thickness)
+    .extrude(wedge_block_upper_z - wedge_block_lower_z)
     ).intersect(wedge_block_upper_slice) - (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length,
@@ -223,11 +216,19 @@ wedge_block_lower_fastener_slot = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
+mid_joint_knob_clearance = (
+    cq.Workplane("XY")
+    .transformed(offset=cq.Vector(0, arm_length, wedge_block_upper_z - wedge_range_vertical))
+    .circle(ball_surround_outer_radius - nozzle_diameter*4)
+    .extrude(ball_surround_outer_radius)
+    )
+
 arm_actuating_rod = (
     arm_actuating_rod
     + wedge_block_lower
     - wedge_block_upper_slice
     - wedge_block_lower_fastener_slot
+    - mid_joint_knob_clearance
     )
 
 # Assemble half of the arm. Print this twice for the three-jointed mechanism.
