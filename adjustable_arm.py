@@ -53,18 +53,28 @@ end_ball = (
     .sphere(ball_diameter/2)
     )
 
+# This is the visible opening, diameter for a loose fastener fit so it can
+# be installed easily.
 end_ball_fastener_shaft = (
     cq.Workplane("XY")
     .circle(fastener_diameter/2)
     .extrude(-ball_diameter)
     )
 
+# In the middle of the ball is space for a hex nut that can be dropped in
+# during printing.
 end_ball_fastener_nut = (
     cq.Workplane("XY")
     .polygon(6, fastener_hex_width, circumscribed = True)
     .extrude(fastener_hex_thickness/2, both=True)
     )
 
+# Beyond the nut is a somewhat cone/pagoda shaped cavity that will neck down
+# to a very tight fit around the fastener. The fastener will likely cut some
+# thread into this plastic but the tread isn't the point, the point is friction
+# so the fastener doesn't back out too easily. This is similar in concept to
+# nuts with a plastic insert, except here our metal nut is to be added during
+# printing and this is the "plastic insert"
 end_ball_cone = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, 0, fastener_hex_thickness / 2))
@@ -165,6 +175,9 @@ wedge_fastener_diameter = 6.5
 wedge_angle = 25
 wedge_range_vertical = wedge_range_horizontal * math.tan(math.radians(wedge_angle))
 
+# This block is used to split the upper from lower parts of the pressure wedge
+# mechanism. I think its purpose can be replaced with a workplane split()
+# command but I don't understand split() yet and I can't predict its behavior.
 wedge_block_upper_slice = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
@@ -174,6 +187,7 @@ wedge_block_upper_slice = (
     .extrude(ball_surround_outer_radius * 4)
     )
 
+# The wedge block is the starting point for tailoring the pressure wedge
 wedge_diameter = rod_side / math.sin(math.radians(45))
 wedge_block_mid = (
     cq.Workplane("XY")
@@ -263,18 +277,23 @@ mid_joint_trim = (
     .extrude(ball_surround_outer_radius * 2)
     )
 
+# Variation of upper block that hosts a hex head bolt.
 wedge_block_hex_bolt = (
     wedge_block_upper_full_height
     - mid_joint_trim.translate((0, 0, wedge_hex_z + fastener_hex_thickness))
     - wedge_block_hex_bolt_head
     )
 
+# Variation of upper block that does not host a hex head, to be paired with a
+# knob which will host a hex nut.
 wedge_block_z = wedge_range_vertical + wedge_diameter * math.tan(math.radians(wedge_angle)) / 2
 wedge_block_no_hex = (
     wedge_block_upper_full_height
     - mid_joint_trim.translate((0, 0, wedge_block_z))
     )
 
+# Show one or the other upper block variations during in-place visualization.
+# When preparing for printing, display both in their print orientations.
 if reposition_for_printing:
     show_object(
         wedge_block_hex_bolt
@@ -302,7 +321,7 @@ arm = (
     - arm_end_ball_cavity
     )
 
-
+# Knob parameters
 knob_base_taper_height = wedge_block_z + ball_surround_outer_radius - wedge_diameter/2
 knob_base_vertical_height = ball_surround_outer_radius + wedge_range_vertical
 knob_base_radius = ball_surround_outer_radius - minimum_gap
@@ -311,6 +330,7 @@ knob_wing_thickness = 30
 knob_wing_height = ball_surround_outer_radius + (knob_wing_radius - ball_surround_outer_radius)
 knob_bottom = 1.8
 
+# Clearance for the hex nut to be hosted inside nut
 knob_hex_head = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, wedge_block_z + knob_bottom))
@@ -318,6 +338,7 @@ knob_hex_head = (
     .extrude(knob_wing_height)
     )
 
+# Revolve operation to create external volume of knob
 knob = (
     cq.Workplane("XZ")
     .transformed(offset=cq.Vector(0, 0, -arm_length))
@@ -337,6 +358,7 @@ knob = (
     .cutThruAll()
     ) - knob_hex_head
 
+# Block to cut symmetric chunks out of the knob to create a wingnut shape
 knob_removal = (
     cq.Workplane("XZ")
     .lineTo(knob_wing_thickness/2, ball_surround_outer_radius*2, forConstruction = True)
@@ -349,8 +371,10 @@ knob_removal = (
 knob = knob - knob_removal - knob_removal.mirror("YZ")
 show_object(knob, options={"color":"green","alpha":0.5})
 
+# Complex single print object becoming likely to trigger CadQuery bugs. Ugh.
 combined = end_ball_assembly + arm
 
+# Again, chop can likely be replaced with a split() command but I have yet to figure out how
 chop = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0,0,cutoff_z))
