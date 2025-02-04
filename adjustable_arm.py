@@ -42,7 +42,7 @@ fastener_thread_pitch = 1.2
 fastener_hex_thickness = 5.7
 fastener_hex_width = 11.25
 nozzle_diameter = 0.4
-ball_surround_gap = 0.2
+minimum_gap = 0.2
 cutoff_z = -ball_diameter*math.sin(math.radians(45))/2
 wedge_range_horizontal = 2
 
@@ -78,7 +78,7 @@ end_ball_cone = (
     .faces(">Z").workplane()
     .circle(fastener_diameter_tight/2)
     .workplane(offset=fastener_diameter_tight/4)
-    .circle(ball_surround_gap)
+    .circle(minimum_gap)
     .loft()
     )
 
@@ -91,7 +91,7 @@ end_ball_assembly = (
 
 # Create the socket surrounind the ball
 ball_surround_thickness = 5
-ball_surround_inner_radius = ball_surround_gap + ball_diameter/2
+ball_surround_inner_radius = minimum_gap + ball_diameter/2
 ball_surround_outer_radius = ball_surround_thickness + ball_diameter/2
 ball_surround_inner_45 = ball_surround_inner_radius/math.sqrt(2)
 ball_surround_outer_45 = ball_surround_outer_radius/math.sqrt(2)
@@ -116,7 +116,7 @@ ball_surround_outer = ball_surround_outer - lug_clearance
 arm_length = 50
 arm_side_outer = ball_surround_outer_45*2
 rod_side = arm_side_outer - ball_surround_thickness
-arm_side_inner = rod_side + ball_surround_gap * 4
+arm_side_inner = rod_side + minimum_gap * 4
 
 # Outer shell will link the ball-and-socket to center (mid) joint
 arm_outer_shell = (
@@ -130,15 +130,15 @@ arm_outer_shell = (
 
 # Channel inside for rod that transmits pushing force from mid joint to
 # ball in socket
-arm_actuating_rod_channel = (
+actuating_rod_channel = (
     cq.Workplane("XZ")
     .transformed(rotate=cq.Vector(0,0,45))
     .rect(arm_side_inner, arm_side_inner)
-    .extrude(-arm_length-ball_surround_gap*2)
+    .extrude(-arm_length-minimum_gap*2)
     )
 
 # Rod that transmits pushing force from mid joint to ball in socket
-arm_actuating_rod = (
+actuating_rod = (
     cq.Workplane("XZ")
     .transformed(rotate=cq.Vector(0,0,45))
     .transformed(offset=cq.Vector(0, 0, -wedge_range_horizontal))
@@ -150,7 +150,7 @@ arm_actuating_rod = (
 # The actual "socket" part of ball and socket
 arm_end_ball_cavity = (
     cq.Workplane("YZ")
-    .sphere(ball_surround_gap + ball_diameter/2)
+    .sphere(minimum_gap + ball_diameter/2)
     )
 
 # Mid joint structure
@@ -201,7 +201,7 @@ wedge_block_lower_fastener_slot = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-mid_joint_clearance_size = wedge_diameter + ball_surround_gap * 2
+mid_joint_clearance_size = wedge_diameter + minimum_gap * 2
 mid_joint_clearance = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
@@ -219,8 +219,8 @@ mid_joint_clearance = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-arm_actuating_rod = (
-    arm_actuating_rod
+actuating_rod = (
+    actuating_rod
     + wedge_block_mid
     - wedge_block_upper_slice
     - wedge_block_lower_fastener_slot
@@ -283,10 +283,10 @@ arm = (
     ball_surround_outer
     + arm_outer_shell
     + mid_joint
-    - arm_actuating_rod_channel
+    - actuating_rod_channel
     - mid_joint_clearance
     - mid_joint_trim.translate((0,0,-wedge_range_vertical))
-    + arm_actuating_rod
+    + actuating_rod
     - arm_end_ball_cavity
     )
 
