@@ -164,10 +164,11 @@ arm_end_ball_cavity = (
     )
 
 # Mid joint structure
+mid_joint_radius = ball_surround_outer_radius + nozzle_diameter * 2
 mid_joint = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
-    .circle(ball_surround_outer_radius + nozzle_diameter * 2)
+    .circle(mid_joint_radius)
     .extrude(ball_surround_outer_radius, both = True)
     )
 
@@ -233,6 +234,37 @@ mid_joint_clearance = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
+# Reinforce the section between end ball and mid joint
+tie_length = cutoff_z * 2 # Only true while cutoff angle is 45 degrees
+tie_width = 5
+tie_height = 1.8
+tie_gap = 0.2 # Should be 1 layer height
+
+tie = (
+    cq.Workplane("YZ")
+    .lineTo(tie_width,            0)
+    .lineTo(tie_width-tie_height, tie_height)
+    .lineTo(          tie_height, tie_height)
+    .close()
+    .extrude(tie_length/2, both=True)
+    )
+
+tie_clearance = (
+    cq.Workplane("YZ")
+    .lineTo(                                                            -minimum_gap, 0)
+    .lineTo(                                      tie_height + tie_gap - minimum_gap, tie_height+tie_gap)
+    .lineTo( wedge_range_horizontal + tie_width - tie_height - tie_gap + minimum_gap, tie_height+tie_gap)
+    .lineTo( wedge_range_horizontal + tie_width                        + minimum_gap, 0)
+    .close()
+    .extrude(tie_length/2, both=True)
+    )
+
+tie_start = ball_surround_outer_radius - tie_width
+tie_span = arm_length - ball_surround_outer_radius - mid_joint_radius
+actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start, cutoff_z))
+actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start + tie_span, cutoff_z))
+
+# Assembly of center actuation rod
 actuating_rod = (
     actuating_rod
     + wedge_block_mid
@@ -320,6 +352,8 @@ arm = (
     + actuating_rod
     - arm_end_ball_cavity
     )
+arm = arm + tie.translate((0, tie_start, cutoff_z))
+arm = arm + tie.translate((0, tie_start + tie_span, cutoff_z))
 
 # Knob parameters
 knob_base_taper_height = wedge_block_z + ball_surround_outer_radius - wedge_diameter/2
