@@ -147,6 +147,29 @@ actuating_rod = (
     .edges("|Y")
     )
 
+rod_ball_clearance_size = arm_side_inner * math.sin(math.radians(45))
+rod_ball_clearance_fillet = 1
+rod_ball_clearance = (
+    cq.Workplane("XZ")
+    .sphere(rod_ball_clearance_size)
+    ).intersect(
+        cq.Workplane("XZ")
+        .transformed(offset=cq.Vector(0,0,rod_ball_clearance_fillet))
+        .circle(rod_ball_clearance_size)
+        .extrude(-ball_surround_outer_radius)
+    ).faces("<Y").fillet(rod_ball_clearance_fillet)
+
+rod_ball_size = rod_side * math.sin(math.radians(45))
+rod_ball = (
+    cq.Workplane("XZ")
+    .sphere(rod_ball_size)
+    ).intersect(
+        cq.Workplane("XZ")
+        .transformed(offset=cq.Vector(0,0,-wedge_range_horizontal))
+        .circle(rod_ball_clearance_size)
+        .extrude(-ball_surround_outer_radius)
+    )
+
 # The actual "socket" part of ball and socket
 arm_end_ball_cavity = (
     cq.Workplane("YZ")
@@ -221,10 +244,20 @@ mid_joint_clearance = (
 
 actuating_rod = (
     actuating_rod
+    + rod_ball
     + wedge_block_mid
     - wedge_block_upper_slice
     - wedge_block_lower_fastener_slot
+    - arm_end_ball_cavity
     )
+
+actuating_rod = (
+    actuating_rod.faces("<Z").workplane()
+    .transformed(offset=(0,0,-5))
+    .split(keepBottom=True)
+)
+
+show_object(actuating_rod, options={"color":"green", "alpha":0.5})
 
 # Wedge that will push on the actuating rod in its full size. Expected to be
 # trimmed for different application: one on near side of knob to carry its
@@ -286,10 +319,9 @@ arm = (
     - actuating_rod_channel
     - mid_joint_clearance
     - mid_joint_trim.translate((0,0,-wedge_range_vertical))
-    + actuating_rod
     - arm_end_ball_cavity
+    - rod_ball_clearance
     )
-
 
 """
 knob_height = 20
@@ -322,18 +354,35 @@ knob = (
 
 show_object(knob, options={"color":"green","alpha":0.5})
 """
+end_ball_assembly = (
+    end_ball_assembly.workplane()
+    .transformed(offset=(0,0,cutoff_z))
+    .split(keepTop=True)
+)
 
-combined = end_ball_assembly + arm
+show_object(end_ball_assembly, options={"color":"yellow","alpha":0.5})
 
+arm = (
+    arm.workplane()
+    .transformed(rotate=cq.Vector(-90, 0, 0))
+    .transformed(offset=(0,0,cutoff_z))
+    .split(keepTop=True)
+)
+
+show_object(arm, options={"color":"blue", "alpha":0.5})
+
+"""
 chop = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0,0,cutoff_z))
     .rect(arm_length*3,arm_length*3)
     .extrude(-ball_surround_outer_radius)
     )
+
 if reposition_for_printing:
     show_object((combined - chop).translate((0,0,-cutoff_z)), options={"color":"blue", "alpha":0.5})
 else:
     show_object(combined - chop, options={"color":"blue", "alpha":0.5})
 
 # 2345678901234567890123456789012345678901234567890123456789012345678901234567890
+"""
