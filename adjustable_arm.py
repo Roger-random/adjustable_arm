@@ -261,8 +261,17 @@ tie_clearance = (
 
 tie_start = ball_surround_outer_radius - tie_width/2
 tie_span = arm_length - ball_surround_outer_radius - mid_joint_radius - tie_width/2
-actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start, cutoff_z))
-actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start + tie_span, cutoff_z))
+
+# Calculate how many ties will be added. There should always be at least two,
+# one at each end. If the beam is long enough, additional ties are added in
+# between.
+extra_ties_count = math.floor(tie_span/40)
+tie_spacing = tie_span
+if extra_ties_count > 0:
+    tie_spacing = tie_span / (extra_ties_count+1)
+
+for t in range(2 + extra_ties_count):
+    actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start + tie_spacing*t, cutoff_z))
 
 # Assembly of center actuation rod
 actuating_rod = (
@@ -354,8 +363,9 @@ arm = (
     + actuating_rod
     - arm_end_ball_cavity
     )
-arm = arm + tie.translate((0, tie_start, cutoff_z))
-arm = arm + tie.translate((0, tie_start + tie_span, cutoff_z))
+
+for t in range(2 + extra_ties_count):
+    arm = arm + tie.translate((0, tie_start + tie_spacing*t, cutoff_z))
 
 # Knob parameters
 knob_base_taper_height = wedge_block_z + ball_surround_outer_radius - wedge_diameter/2
