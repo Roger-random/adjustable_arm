@@ -323,7 +323,7 @@ arm = (
 
 # Knob parameters
 knob_base_taper_height = wedge_block_z + ball_surround_outer_radius - wedge_diameter/2
-knob_base_vertical_height = ball_surround_outer_radius + wedge_range_vertical
+knob_base_vertical_height = ball_surround_outer_radius + wedge_range_vertical*3
 knob_base_radius = ball_surround_outer_radius - minimum_gap
 knob_wing_radius = 35
 knob_wing_thickness = 30
