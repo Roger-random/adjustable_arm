@@ -236,9 +236,9 @@ mid_joint_clearance = (
 
 # Reinforce the section between end ball and mid joint
 tie_length = cutoff_z * 2 # Only true while cutoff angle is 45 degrees
-tie_width = 5
+tie_width = 6
 tie_height = 1.8
-tie_gap = 0.2 # Should be 1 layer height
+tie_gap = 0.4 # Must be at least 1 layer height
 
 tie = (
     cq.Workplane("YZ")
@@ -259,8 +259,8 @@ tie_clearance = (
     .extrude(tie_length/2, both=True)
     )
 
-tie_start = ball_surround_outer_radius - tie_width
-tie_span = arm_length - ball_surround_outer_radius - mid_joint_radius
+tie_start = ball_surround_outer_radius - tie_width/2
+tie_span = arm_length - ball_surround_outer_radius - mid_joint_radius - tie_width/2
 actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start, cutoff_z))
 actuating_rod = actuating_rod - tie_clearance.translate((0, tie_start + tie_span, cutoff_z))
 
@@ -278,6 +278,8 @@ actuating_rod = (
 wedge_block_upper_full_height = (
     wedge_block_mid
     .intersect(wedge_block_upper_slice)
+    .edges("<Z")
+    .chamfer(wedge_range_vertical/2)
     ) - (
     # Hole through the middle for fastener
     cq.Workplane("XY")
@@ -314,7 +316,7 @@ wedge_block_hex_bolt = (
     wedge_block_upper_full_height
     - mid_joint_trim.translate((0, 0, wedge_hex_z + fastener_hex_thickness))
     - wedge_block_hex_bolt_head
-    )
+    ).edges(">Z").chamfer(wedge_range_vertical/2)
 
 # Variation of upper block that does not host a hex head, to be paired with a
 # knob which will host a hex nut.
@@ -322,7 +324,7 @@ wedge_block_z = wedge_range_vertical + wedge_diameter * math.tan(math.radians(we
 wedge_block_no_hex = (
     wedge_block_upper_full_height
     - mid_joint_trim.translate((0, 0, wedge_block_z))
-    )
+    ).edges(">Z").chamfer(wedge_range_vertical/2)
 
 # Show one or the other upper block variations during in-place visualization.
 # When preparing for printing, display both in their print orientations.
