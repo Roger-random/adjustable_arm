@@ -123,7 +123,7 @@ lug_clearance = (
 ball_surround_outer = ball_surround_outer - lug_clearance
 
 # Build the arm connecting to the ball joint
-arm_length = 50
+arm_length = 200
 arm_side_outer = 16
 rod_side = arm_side_outer - ball_surround_thickness
 arm_side_inner = rod_side + minimum_gap * 4
@@ -216,7 +216,7 @@ wedge_block_lower_fastener_slot = (
     .extrude(ball_surround_outer_radius, both = True)
     )
 
-mid_joint_clearance_size = wedge_diameter + minimum_gap * 2
+mid_joint_clearance_size = wedge_diameter + (minimum_gap * 4 / math.sin(math.radians(45)))
 mid_joint_clearance = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
@@ -312,11 +312,12 @@ wedge_block_hex_bolt_head = (
     .extrude(fastener_hex_thickness)
     )
 
+mid_joint_trim_radius = mid_joint_radius - nozzle_diameter*2
 mid_joint_trim = (
     # Volume used for trimming objects in order to fit in mid joint
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
-    .circle(ball_surround_outer_radius)
+    .circle(mid_joint_trim_radius)
     .extrude(ball_surround_outer_radius * 2)
     )
 
@@ -370,7 +371,7 @@ for t in range(2 + extra_ties_count):
 # Knob parameters
 knob_base_taper_height = wedge_block_z + ball_surround_outer_radius - wedge_diameter/2
 knob_base_vertical_height = ball_surround_outer_radius + wedge_range_vertical*3
-knob_base_radius = ball_surround_outer_radius - minimum_gap
+knob_base_radius = mid_joint_trim_radius - minimum_gap
 knob_wing_radius = 35
 knob_wing_thickness = 30
 knob_wing_height = ball_surround_outer_radius + (knob_wing_radius - ball_surround_outer_radius)
