@@ -124,7 +124,7 @@ ball_surround_outer = ball_surround_outer - lug_clearance
 
 # Build the arm connecting to the ball joint
 arm_length = 200
-arm_side_outer = 16
+arm_side_outer = 17
 rod_side = arm_side_outer - ball_surround_thickness
 arm_side_inner = rod_side + minimum_gap * 4
 
@@ -189,7 +189,7 @@ wedge_block_upper_slice = (
     )
 
 # The wedge block is the starting point for tailoring the pressure wedge
-wedge_diameter = (ball_surround_outer_radius - wedge_range_horizontal - nozzle_diameter * 4 )*2  # rod_side / math.sin(math.radians(45))
+wedge_diameter = (ball_surround_outer_radius - wedge_range_horizontal - nozzle_diameter * 4 )*2
 wedge_block_mid = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
