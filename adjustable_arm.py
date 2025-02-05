@@ -124,7 +124,7 @@ ball_surround_outer = ball_surround_outer - lug_clearance
 
 # Build the arm connecting to the ball joint
 arm_length = 50
-arm_side_outer = ball_surround_outer_45*2
+arm_side_outer = 16
 rod_side = arm_side_outer - ball_surround_thickness
 arm_side_inner = rod_side + minimum_gap * 4
 
@@ -235,7 +235,7 @@ mid_joint_clearance = (
     )
 
 # Reinforce the section between end ball and mid joint
-tie_length = cutoff_z * 2 # Only true while cutoff angle is 45 degrees
+tie_length = rod_side * math.sin(math.radians(45))
 tie_width = 6
 tie_height = 1.8
 tie_gap = 0.4 # Must be at least 1 layer height
