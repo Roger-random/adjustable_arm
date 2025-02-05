@@ -189,7 +189,7 @@ wedge_block_upper_slice = (
     )
 
 # The wedge block is the starting point for tailoring the pressure wedge
-wedge_diameter = rod_side / math.sin(math.radians(45))
+wedge_diameter = (ball_surround_outer_radius - wedge_range_horizontal - nozzle_diameter * 4 )*2  # rod_side / math.sin(math.radians(45))
 wedge_block_mid = (
     cq.Workplane("XY")
     .transformed(offset=cq.Vector(0, arm_length, 0))
