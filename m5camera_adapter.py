@@ -33,7 +33,7 @@ lego_pin_lip_diameter = 6.22
 lego_pin_lip_depth = 1
 
 adapter_length = 45
-lego_bar_height = 12
+lego_bar_height = 10
 
 def lego_pin():
     center = (
@@ -74,19 +74,34 @@ def camera_adapter():
 
     block = (
         cq.Workplane("YZ")
-        .rect(adapter_length, bolt_head_diameter+lego_bar_height)
-        .extrude(bolt_head_thickness + 2)
-        .faces(">Z").edges("|X").fillet(bolt_head_diameter)
-        .faces("<X").workplane()
-        .transformed(offset=cq.Vector(0,3,0))
+        .rect(adapter_length, bolt_head_diameter+lego_bar_height/2)
         .circle(bolt_shaft_diameter/2)
-        .cutThruAll()
-        .transformed(offset=cq.Vector(0,0,0)) # The fact this is necessary feels like a bug
-        .polygon(6, bolt_head_diameter, circumscribed=True)
-        .extrude(-bolt_head_thickness, combine='cut')
+        .extrude(bolt_head_thickness + 2)
+        .faces(">Z").edges("|X").fillet(bolt_head_diameter/2)
     )
 
-    return block + lego_bar().translate((-lego_bar_height/2,0,-(bolt_head_diameter+lego_bar_height)/2))
+    hex_head = (
+        cq.Workplane("YZ")
+        .transformed(offset=cq.Vector(0,0,bolt_head_thickness))
+        .polygon(6, bolt_head_diameter, circumscribed=True)
+        .extrude(-bolt_head_thickness-lego_bar_height)
+    )
+
+    block = (
+        block
+        +lego_bar().translate((-lego_bar_height/2,0,-(bolt_head_diameter+lego_bar_height/2)/2))
+    )
+
+
+    block = block - hex_head
+
+    block = block.faces("<Z[1]").edges("|Y").edges(">X").fillet(2)
+
+    block = block.faces("<Y or >Y").edges("|Z").fillet(bolt_head_thickness/2)
+
+    return block
+
+
 
 if show_object:
     show_object(camera_adapter(), options={"color":"blue", "alpha":0.5})
