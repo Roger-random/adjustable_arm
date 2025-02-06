@@ -43,7 +43,7 @@ extrusion_channel_lip = 2
 # 2. Thick enough to be grip reliably
 # 3. Multiple of nozzle diameter for easy printing
 perimeter_thickness = 1.6
-clip_length = 40
+clip_length = 30
 
 extra_gap = 0.1
 
@@ -66,52 +66,88 @@ def perimeter_feature(length):
         .extrude(clip_length/2, both=True)
     )
 
-clip_side = (
-    perimeter_feature(extrusion_size_half*2 + perimeter_thickness + extra_gap*2)
-    .translate(( extrusion_size_half + perimeter_thickness/2 + extra_gap,
-                -extrusion_size_half - perimeter_thickness/2 - extra_gap, 0))
-)
+def extrusion_clip():
+    clip_side = (
+        perimeter_feature(extrusion_size_half*2 + perimeter_thickness + extra_gap*2)
+        .translate(( extrusion_size_half + perimeter_thickness/2 + extra_gap,
+                    -extrusion_size_half - perimeter_thickness/2 - extra_gap, 0))
+    )
 
-clip_top = (
-    perimeter_feature(
-        extrusion_size_half
-        - extrusion_channel_entrance_half
-        + perimeter_thickness
-        + extra_gap)
-    .rotate((0,0,0),(0,0,1), -90)
-    .translate((extrusion_channel_entrance_half - perimeter_thickness/2,
-                perimeter_inner + extra_gap  + perimeter_thickness/2))
-)
-clip_bottom = clip_top.mirror("XZ")
+    clip_top = (
+        perimeter_feature(
+            extrusion_size_half
+            - extrusion_channel_entrance_half
+            + perimeter_thickness
+            + extra_gap)
+        .rotate((0,0,0),(0,0,1), -90)
+        .translate((extrusion_channel_entrance_half - perimeter_thickness/2,
+                    perimeter_inner + extra_gap  + perimeter_thickness/2))
+    )
+    clip_bottom = clip_top.mirror("XZ")
 
-lip_top = (
-    perimeter_feature(
-        extrusion_channel_lip
-        + perimeter_thickness/2
-        + extra_gap)
-    .translate((extrusion_channel_entrance_half - perimeter_thickness/2,
-                perimeter_inner - extrusion_channel_lip))
-)
-lip_bottom = (
-    perimeter_feature(extrusion_channel_lip/2 + extra_gap)
-    .translate((extrusion_channel_entrance_half - perimeter_thickness/2,
-                -perimeter_inner - extra_gap - perimeter_thickness/2))
-)
+    lip_top = (
+        perimeter_feature(
+            extrusion_channel_lip
+            + perimeter_thickness/2
+            + extra_gap)
+        .translate((extrusion_channel_entrance_half - perimeter_thickness/2,
+                    perimeter_inner - extrusion_channel_lip))
+    )
+    lip_bottom = (
+        perimeter_feature(extrusion_channel_lip/2 + extra_gap)
+        .translate((extrusion_channel_entrance_half - perimeter_thickness/2,
+                    -perimeter_inner - extra_gap - perimeter_thickness/2))
+    )
 
-hook_size = 1
-top_hook = (
-    perimeter_feature(hook_size)
-    .rotate((0,0,0),(0,0,1), -135)
-    .translate((lip_addon_x,  perimeter_inner - extrusion_channel_lip))
-)
+    hook_size = 1
+    top_hook = (
+        perimeter_feature(hook_size)
+        .rotate((0,0,0),(0,0,1), -135)
+        .translate((lip_addon_x,  perimeter_inner - extrusion_channel_lip))
+    )
 
-lever_size = 5
-bottom_removal_lever = (
-    perimeter_feature(lever_size)
-    .rotate((0,0,0),(0,0,1), 135)
-    .translate((lip_addon_x, -perimeter_inner - perimeter_thickness/2 - extra_gap))
-)
+    lever_size = 5
+    bottom_removal_lever = (
+        perimeter_feature(lever_size)
+        .rotate((0,0,0),(0,0,1), 135)
+        .translate((lip_addon_x, -perimeter_inner - perimeter_thickness/2 - extra_gap))
+    )
 
-clip_perimeter = clip_side + clip_top + clip_bottom + lip_top + lip_bottom + top_hook + bottom_removal_lever
+    return (
+        clip_side
+        + clip_top
+        + clip_bottom
+        + lip_top
+        + lip_bottom
+        + top_hook
+        + bottom_removal_lever
+    )
 
-show_object(clip_perimeter, options={"color":"blue", "alpha":0.5})
+def hex_bolt_clip():
+    bolt_head_diameter = 11
+    bolt_head_thickness = 4
+    bolt_shaft_diameter = 6.5
+    additional_thickness = 0
+
+    hex_bolt_clip = (
+        extrusion_clip().faces(">X").workplane()
+        .rect(extrusion_size_half*2, clip_length)
+        .workplane(offset=bolt_head_thickness+additional_thickness)
+        .circle(bolt_head_diameter*0.8)
+        .loft()
+        .circle(bolt_shaft_diameter/2)
+        .cutThruAll()
+    )
+
+    hex_bolt_head = (
+        cq.Workplane("YZ")
+        .polygon(6, bolt_head_diameter, circumscribed = True)
+        # Bolt head will protrude into extra_gap, which is intentional.
+        .extrude(extrusion_size_half + bolt_head_thickness)
+    )
+
+    return hex_bolt_clip - hex_bolt_head
+
+# If this file is loaded in CQ-Editor, display an object.
+if show_object:
+    show_object(hex_bolt_clip(), options={"color":"blue", "alpha":0.5})
