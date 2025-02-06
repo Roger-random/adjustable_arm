@@ -45,7 +45,7 @@ extrusion_channel_lip = 2
 perimeter_thickness = 1.6
 clip_length = 30
 
-extra_gap = 0.1
+extra_gap = 0.2
 
 # Profile for the clip itself. Top side hooks into the extrusion rail. Bottom
 # has only a lip because hooks on both sides would be impossible to install.
@@ -125,7 +125,7 @@ def extrusion_clip():
 
 def hex_bolt_clip():
     bolt_head_diameter = 11
-    bolt_head_thickness = 4
+    bolt_head_thickness = 4.25
     bolt_shaft_diameter = 6.5
     additional_thickness = 0
 
