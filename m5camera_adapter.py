@@ -74,22 +74,25 @@ def camera_adapter():
 
     block = (
         cq.Workplane("YZ")
-        .rect(adapter_length, bolt_head_diameter+lego_bar_height/2)
-        .circle(bolt_shaft_diameter/2)
+        .rect(adapter_length, bolt_head_diameter*3)
         .extrude(bolt_head_thickness + 2)
+        .faces(">X")
+        .transformed(offset=cq.Vector((0,bolt_head_diameter/2,0)))
+        .circle(bolt_shaft_diameter/2)
+        .cutThruAll()
         .faces(">Z").edges("|X").fillet(bolt_head_diameter/2)
     )
 
     hex_head = (
         cq.Workplane("YZ")
-        .transformed(offset=cq.Vector(0,0,bolt_head_thickness))
+        .transformed(offset=cq.Vector(0,bolt_head_diameter/2,bolt_head_thickness))
         .polygon(6, bolt_head_diameter, circumscribed=True)
         .extrude(-bolt_head_thickness-lego_bar_height)
     )
 
     block = (
         block
-        +lego_bar().translate((-lego_bar_height/2,0,-(bolt_head_diameter+lego_bar_height/2)/2))
+        +lego_bar().translate((-lego_bar_height/2,0,-(bolt_head_diameter*3)/2))
     )
 
 
