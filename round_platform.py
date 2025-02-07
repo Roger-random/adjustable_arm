@@ -39,21 +39,35 @@ def round_platform(radius=30):
         .extrude(1.2)
     )
 
+    hex_head_thickness = bolt_head_thickness+2
     hex_head = (
         cq.Workplane("XZ")
         .rect(hex_head_side, hex_head_side)
         .circle(bolt_shaft_diameter/2)
-        .extrude(bolt_head_thickness+2)
+        .extrude(hex_head_thickness)
         .faces("<Y")
         .polygon(6, bolt_head_diameter, circumscribed=True)
         .extrude(-bolt_head_thickness, combine='cut')
     )
 
-    platform = flat + hex_head.translate((0, +radius, hex_head_side/2))
+    reinforcement_rib = (
+        cq.Workplane("YZ")
+        .lineTo(radius - hex_head_thickness, 0)
+        .lineTo(radius - hex_head_thickness, hex_head_side)
+        .lineTo(-radius * 0.8, 0)
+        .close()
+        .extrude((hex_head_side - bolt_head_diameter)/2)
+        .translate((-hex_head_side/2,0,0))
+    )
 
-    # Cosmetic fillets
-    platform = platform.faces(">Z").edges("|Y").fillet(bolt_head_diameter/2)
-    platform = platform.faces(">Z").edges("|X").fillet(1)
+    platform = (
+        flat
+        + hex_head.translate((0, +radius, hex_head_side/2))
+        + reinforcement_rib
+        + reinforcement_rib.mirror("YZ")
+    )
+
+    # Cosmetic edge treatments
     platform = platform.faces("<Z[1]").edges("%Line").fillet(2)
     platform = platform.faces("<Z[1]").chamfer(0.6)
 
