@@ -26,11 +26,14 @@ SOFTWARE.
 Attach a ring LED circuit board of specified diameter to a 1/4"-20 bolt head
 """
 
+import math
+import cadquery as cq
+
 def ring_led_clip(
         radius=30,
         ring_height = 4,
-        ring_thickness = 1.6, # Keep this a multiple of nozzle diameter
-        clip_angular_length = 30 # Each clip occupies this number of degrees of arc
+        ring_thickness = 8, # Keep this a multiple of nozzle diameter
+        clip_angular_length = 60 # Each clip occupies this number of degrees of arc
         ):
     bolt_head_diameter = 11
     bolt_head_thickness = 4.25
@@ -45,8 +48,20 @@ def ring_led_clip(
         .circle(bolt_shaft_diameter/2)
         .extrude(hex_head_thickness)
         .faces("<Y")
-        .polygon(6, bolt_head_diameter, circumscribed=True)
+        .polygon(6, bolt_head_diameter, circumscribed = True)
         .extrude(-bolt_head_thickness, combine='cut')
+    )
+
+    hex_head_connection_x = radius + ring_thickness - math.tan(math.asin((hex_head_side/2)/radius))*(hex_head_side/4)
+    hex_head_connection_length = 10 + hex_head_thickness
+    hex_head_connection = (
+        cq.Workplane("YZ")
+        .lineTo(hex_head_connection_x,                               ring_height/2, forConstruction = True)
+        .lineTo(hex_head_connection_x,                              -ring_height/2)
+        .lineTo(hex_head_connection_x + hex_head_connection_length, -ring_height/2)
+        .lineTo(hex_head_connection_x + hex_head_connection_length,  ring_height/2)
+        .close()
+        .extrude(hex_head_side/2, both = True)
     )
 
     ring = (
@@ -56,7 +71,6 @@ def ring_led_clip(
         .lineTo(radius + ring_thickness, ring_height/2)
         .lineTo(radius, ring_height/2)
         .close()
-#        .rect(ring_thickness, ring_height/2, centered=False)
         .revolve(240+clip_angular_length, (0,0,0), (0,1,0))
     )
 
@@ -76,8 +90,20 @@ def ring_led_clip(
         + claw.rotate((0,0,0),(0,0,1), -120 - clip_angular_length/2)
     )
 
-    clip = clip_half + clip_half.mirror("XY")
+    clip = (
+        clip_half
+        + clip_half.mirror("XY")
+        + hex_head_connection
+        + hex_head.translate((
+            0,
+            hex_head_connection_x
+            + hex_head_connection_length,
+            hex_head_side/2))
+    )
 
+    clip = clip.edges(">Y").edges("|Z").fillet(2)
+    clip = clip.edges(">Z[1]").fillet(5)
+    clip = clip.edges(">Y").edges(">Z").fillet(2)
     return clip
 
 if show_object:
