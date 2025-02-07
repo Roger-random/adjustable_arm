@@ -107,6 +107,9 @@ def bridgeport_spindle_clamp(
         + tab.translate(tab_slot_offset)
     )
 
+    clip = clip.faces(">Y").edges("|Z").fillet(2)
+    clip = clip.faces("<Y").edges("|Z").fillet(2)
+
     clip = clip - slot.translate(tab_slot_offset)
 
     return clip
