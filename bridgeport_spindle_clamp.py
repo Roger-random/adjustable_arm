@@ -75,16 +75,16 @@ def bridgeport_spindle_clamp(
         .revolve(360, (0,0,0), (0,1,0))
     ).faces("|Z").chamfer(2)
 
-    slot_width = 2
+    slot_width = 4
     tab_width = slot_width + 8
-    tab_length = 20
+    tab_length = 12.5
     tab = (
         cq.Workplane("XY")
         .rect(tab_width, tab_length)
         .extrude(ring_height/2, both=True)
         # Hole for fastener
         .faces(">X").workplane()
-        .lineTo(-tab_length/2,0)
+        .lineTo(-tab_length*0.25,0)
         .circle(3.5/2)
         .extrude(-tab_width, both=True, combine='cut')
     )
@@ -115,4 +115,4 @@ def bridgeport_spindle_clamp(
     return clip
 
 if show_object:
-    show_object(bridgeport_spindle_clamp(radius=48/2), options={"color":"blue", "alpha":0.5})
+    show_object(bridgeport_spindle_clamp(radius=47/2), options={"color":"blue", "alpha":0.5})
