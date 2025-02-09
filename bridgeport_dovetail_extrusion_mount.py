@@ -27,20 +27,29 @@ Mount a 2" x 2" extrusion beam onto the ram dovetail of a Bridgeport mill
 
 https://www.mcmaster.com/products/extrusions/t-slotted-framing-and-fittings~/t-slotted-framing-rail-profile~quad/system-of-measurement~inch/t-slotted-framing-rails-4/quad-rail-profile-style~quad/rail-width~2/
 """
-dovetail_width = 133.35
-dovetail_height = 28.75
+
+# Original estimate values
+estimated_dovetail_base_width = 133.35
+dovetail_height = 25
+estimated_dovetail_top_width = estimated_dovetail_base_width - dovetail_height*2
+
+# Bridgeport dovetail is not 45 degrees! Adjust as per measurement against
+# a test print with incorrect 45 degree dovetail.
+lr_shift_adjustment = 2.5
+adjusted_dovetail_base_width = estimated_dovetail_base_width + 10 - 6 - lr_shift_adjustment
+adjusted_dovetail_top_width = estimated_dovetail_top_width + 10 - lr_shift_adjustment
 
 # Placeholder built from measured dimensions of Bridgeport mill ram dovetail.
 # Might be off by a tiny bit so design will need to be flexible.
 def dovetail_placeholder():
     dovetail_half = (
         cq.Workplane("YZ")
-        .lineTo(dovetail_width/2, 0)
-        .lineTo(dovetail_width/2 - dovetail_height, dovetail_height)
+        .lineTo(adjusted_dovetail_base_width/2, 0)
+        .lineTo(adjusted_dovetail_top_width/2, dovetail_height)
         .lineTo(0, dovetail_height)
         .close()
-        .extrude(65, both=True)
-    )
+        .extrude(35, both=True)
+    ).faces("<Z").edges(">Y").chamfer(2)
 
     return (
         dovetail_half
@@ -54,8 +63,9 @@ def extrusion_beam_placeholder():
         .extrude(100, both=True)
     ).translate((0,0,-25.4))
 
-def side_plate():
-    beam_top_corner_x = dovetail_width/2 + 5
+def test_fit_plate_01():
+    test_dovetail_base_width = 133.35
+    beam_top_corner_x = test_dovetail_base_width/2 + 5
     plate_claw_thickness = 20
     plate_claw_height = 25
 
@@ -80,4 +90,4 @@ def side_plate():
 if show_object:
     show_object(dovetail_placeholder(), options={"color":"red", "alpha":0.5})
     show_object(extrusion_beam_placeholder(), options={"color":"red", "alpha":0.5})
-    show_object(side_plate(), options={"color":"green", "alpha":0.5})
+    show_object(test_fit_plate_01(), options={"color":"green", "alpha":0.5})
